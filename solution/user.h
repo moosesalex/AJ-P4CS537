@@ -1,6 +1,10 @@
 struct stat;
 struct rtcdate;
 
+// ? what should these values be ? 0/1 bc theyre flags ?
+#define VMALLOC_SIZE_BASE 0x00000000
+#define VMALLOC_SIZE_HUGE 0x00000001
+
 // system calls
 int fork(void);
 int exit(void) __attribute__((noreturn));

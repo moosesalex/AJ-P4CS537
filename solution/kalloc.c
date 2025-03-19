@@ -10,6 +10,8 @@
 #include "spinlock.h"
 
 void freerange(void *vstart, void *vend);
+void freehugerange(void *vstart, void *vend);
+void khugefree(char *v);
 extern char end[]; // first address after kernel loaded from ELF file
                    // defined by the kernel linker script in kernel.ld
 
@@ -23,6 +25,7 @@ struct
   struct spinlock lock;
   int use_lock;
   struct run *freelist;
+  struct run *freehugelist; // this might be better under a different lock? maybe not...
 } kmem;
 
 // Initialization happens in two phases.
@@ -43,13 +46,12 @@ void kinit2(void *vstart, void *vend)
   kmem.use_lock = 1;
 }
 
-// TODO: implement this
+// TODO: check this is correct
 // part 1
 // initialize the freelist with huge pages from the physical address space reserved for huge pages
-// ? do we want a separate lock for the hugepage freelist? or just a separate freelist (hugefreelist) in the same lock?
+// do we want to hardcode the vstart vend? check that theyre in the right range?
 void khugeinit(void *vstart, void *vend)
 {
-
   freehugerange(vstart, vend);
 }
 
@@ -105,7 +107,7 @@ void khugefree(char *v)
 {
   struct run *r;
 
-  if ((uint)v % HUGE_PAGE_SIZE || v < HUGE_PAGE_START || V2P(v) >= HUGE_PAGE_END)
+  if ((uint)v % HUGE_PAGE_SIZE || V2P(v) < HUGE_PAGE_START || V2P(v) >= HUGE_PAGE_END)
     panic("khugefree");
 
   // Fill with junk to catch dangling refs.
@@ -114,8 +116,8 @@ void khugefree(char *v)
   if (kmem.use_lock)
     acquire(&kmem.lock);
   r = (struct run *)v;
-  r->next = kmem.freelist;
-  kmem.freelist = r;
+  r->next = kmem.freehugelist;
+  kmem.freehugelist = r;
   if (kmem.use_lock)
     release(&kmem.lock);
 }
@@ -138,7 +140,7 @@ kalloc(void)
   return (char *)r;
 }
 
-// TODO: implement this
+// TODO: i think this is good ?
 // part 1
 char *
 khugealloc(void)
@@ -147,6 +149,11 @@ khugealloc(void)
 
   if (kmem.use_lock)
     acquire(&kmem.lock);
+  r = kmem.freehugelist;
+  if (r)
+    kmem.freehugelist = r->next;
+  if (kmem.use_lock)
+    release(&kmem.lock);
 
   return (char *)r;
 }

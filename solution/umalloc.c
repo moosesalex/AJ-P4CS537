@@ -21,6 +21,11 @@ typedef union header Header;
 static Header base;
 static Header *freep;
 
+// part 2
+// values to keep track of huge page pool
+static Header hugebase;
+static Header *hugefreep;
+
 void
 free(void *ap)
 {
@@ -41,6 +46,39 @@ free(void *ap)
   } else
     p->s.ptr = bp;
   freep = p;
+}
+
+// TODO: implement this
+// part 2
+void
+vfree(void *ap, uint flag)
+{
+  if(flag == VMALLOC_SIZE_BASE)
+  {
+    // free regular pages
+    free(ap);
+  }
+  else
+  {
+    // free huge pages
+    Header *bp, *p;
+
+    bp = (Header*)ap - 1;
+    for(p = hugefreep; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
+      if(p >= p->s.ptr && (bp > p || bp < p->s.ptr))
+        break;
+    if(bp + bp->s.size == p->s.ptr){
+      bp->s.size += p->s.ptr->s.size;
+      bp->s.ptr = p->s.ptr->s.ptr;
+    } else
+      bp->s.ptr = p->s.ptr;
+    if(p + p->s.size == bp){
+      p->s.size += bp->s.size;
+      p->s.ptr = bp->s.ptr;
+    } else
+      p->s.ptr = bp;
+    hugefreep = p;
+  }
 }
 
 static Header*
@@ -86,5 +124,46 @@ malloc(uint nbytes)
     if(p == freep)
       if((p = morecore(nunits)) == 0)
         return 0;
+  }
+}
+
+// TODO: implement this
+// part 2
+
+void*
+vmalloc(uint nbytes, uint flag)
+{
+  if(flag == VMALLOC_SIZE_BASE)
+  {
+    // alloc regular pages
+    return malloc(nbytes);
+  }
+  else
+  {
+    // alloc huge pages
+    Header *p, *prevp;
+    uint nunits;
+
+    nunits = (nbytes + sizeof(Header) - 1)/sizeof(Header) + 1;
+    if((prevp = hugefreep) == 0){
+      hugebase.s.ptr = hugefreep = prevp = &hugebase;
+      hugebase.s.size = 0;
+    }
+    for(p = prevp->s.ptr; ; prevp = p, p = p->s.ptr){
+      if(p->s.size >= nunits){
+        if(p->s.size == nunits)
+          prevp->s.ptr = p->s.ptr;
+        else {
+          p->s.size -= nunits;
+          p += p->s.size;
+          p->s.size = nunits;
+        }
+        hugefreep = prevp;
+        return (void*)(p + 1);
+      }
+      if(p == hugefreep)
+        if((p = morecore(nunits)) == 0)
+          return 0;
+    }
   }
 }
