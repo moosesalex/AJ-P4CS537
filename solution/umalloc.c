@@ -2,6 +2,7 @@
 #include "stat.h"
 #include "user.h"
 #include "param.h"
+#include "memlayout.h"
 
 // Memory allocator by Kernighan and Ritchie,
 // The C programming Language, 2nd ed.  Section 8.7.
@@ -110,8 +111,8 @@ morehugecore(uint nu)
   char *p;
   Header *hp;
 
-  if(nu < 4096)
-    nu = 4096;
+  if(nu < HUGE_PAGE_SIZE / sizeof(Header))
+    nu = HUGE_PAGE_SIZE / sizeof(Header);
   p = shugebrk(nu * sizeof(Header));
   if(p == (char*)-1)
     return 0;

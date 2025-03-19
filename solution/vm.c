@@ -262,18 +262,18 @@ allochugeuvm(pde_t *pgdir, uint oldsz, uint newsz)
   if(newsz < oldsz)
     return oldsz;
 
-  a = PGROUNDUP(oldsz);
-  for(; a < newsz; a += PGSIZE){
+  a = HUGEPGROUNDUP(oldsz);
+  for(; a < newsz; a += HUGE_PAGE_SIZE){
     mem = kalloc();
     if(mem == 0){
-      cprintf("allocuvm out of memory\n");
-      deallocuvm(pgdir, newsz, oldsz);
+      cprintf("allochugeuvm out of memory\n");
+      deallochugeuvm(pgdir, newsz, oldsz);
       return 0;
     }
-    memset(mem, 0, PGSIZE);
-    if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
-      cprintf("allocuvm out of memory (2)\n");
-      deallocuvm(pgdir, newsz, oldsz);
+    memset(mem, 0, HUGE_PAGE_SIZE);
+    if(mappages(pgdir, (char*)a, HUGE_PAGE_SIZE, V2P(mem), PTE_W|PTE_U) < 0){
+      cprintf("allochugeuvm out of memory (2)\n");
+      deallochugeuvm(pgdir, newsz, oldsz);
       kfree(mem);
       return 0;
     }
@@ -324,15 +324,15 @@ deallochugeuvm(pde_t *pgdir, uint oldsz, uint newsz)
   if(newsz >= oldsz)
     return oldsz;
 
-  a = PGROUNDUP(newsz);
-  for(; a  < oldsz; a += PGSIZE){
+  a = HUGEPGROUNDUP(newsz);
+  for(; a  < oldsz; a += HUGE_PAGE_SIZE){
     pte = walkpgdir(pgdir, (char*)a, 0);
     if(!pte)
-      a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
+      a = PGADDR(PDX(a) + 1, 0, 0) - HUGE_PAGE_SIZE;
     else if((*pte & PTE_P) != 0){
       pa = PTE_ADDR(*pte);
       if(pa == 0)
-        panic("kfree");
+        panic("khugefree");
       char *v = P2V(pa);
       kfree(v);
       *pte = 0;
