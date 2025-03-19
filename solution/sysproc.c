@@ -56,6 +56,23 @@ sys_sbrk(void)
   return addr;
 }
 
+// TODO: implement this
+// part 2
+// TODO: add growhugeproc
+int
+sys_shugebrk(void)
+{
+  int addr;
+  int n;
+
+  if(argint(0, &n) < 0)
+    return -1;
+  addr = myproc()->sz;
+  if(growhugeproc(n) < 0)
+    return -1;
+  return addr;
+}
+
 int
 sys_sleep(void)
 {

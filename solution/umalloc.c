@@ -98,6 +98,29 @@ morecore(uint nu)
   return freep;
 }
 
+// TODO: implement
+// part 2
+// nearly identical to morecore(), but is called when vmalloc-ing or vfree-ing huge pages
+// TODO: change the hardcoded ints to reflect this ?
+// TODO: add syscall shugebrk for this function to call
+//       also replace sbrk with shugebrk
+static Header*
+morehugecore(uint nu)
+{
+  char *p;
+  Header *hp;
+
+  if(nu < 4096)
+    nu = 4096;
+  p = shugebrk(nu * sizeof(Header));
+  if(p == (char*)-1)
+    return 0;
+  hp = (Header*)p;
+  hp->s.size = nu;
+  free((void*)(hp + 1));
+  return hugefreep;
+}
+
 void*
 malloc(uint nbytes)
 {
@@ -162,7 +185,7 @@ vmalloc(uint nbytes, uint flag)
         return (void*)(p + 1);
       }
       if(p == hugefreep)
-        if((p = morecore(nunits)) == 0)
+        if((p = morehugecore(nunits)) == 0)
           return 0;
     }
   }
