@@ -112,6 +112,7 @@ static struct kmap {
  { (void*)KERNLINK, V2P(KERNLINK), V2P(data), 0},     // kern text+rodata
  { (void*)data,     V2P(data),     PHYSTOP,   PTE_W}, // kern data+memory
  { (void*)DEVSPACE, DEVSPACE,      0,         PTE_W}, // more devices
+ { (void*)P2V(HUGE_PAGE_START), HUGE_PAGE_START,      HUGE_PAGE_END,         PTE_W|PTE_PS}, // 
 };
 
 // Set up kernel part of a page table.
@@ -257,8 +258,7 @@ allochugeuvm(pde_t *pgdir, uint oldsz, uint newsz)
   char *mem;
   uint a;
 
-  if(newsz >= KERNBASE)
-    return 0;
+  
   if(newsz < oldsz)
     return oldsz;
 
