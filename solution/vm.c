@@ -248,6 +248,40 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
   return newsz;
 }
 
+// TODO: implement this
+// part 2
+// I havent touched this at all, just copy pasted that shit
+int
+allochugeuvm(pde_t *pgdir, uint oldsz, uint newsz)
+{
+  char *mem;
+  uint a;
+
+  if(newsz >= KERNBASE)
+    return 0;
+  if(newsz < oldsz)
+    return oldsz;
+
+  a = HUGEPGROUNDUP(oldsz);
+  for(; a < newsz; a += HUGE_PAGE_SIZE){
+    mem = kalloc();
+    if(mem == 0){
+      cprintf("allochugeuvm out of memory\n");
+      deallochugeuvm(pgdir, newsz, oldsz);
+      return 0;
+    }
+    memset(mem, 0, HUGE_PAGE_SIZE);
+    if(mappages(pgdir, (char*)a, HUGE_PAGE_SIZE, V2P(mem), PTE_W|PTE_U) < 0){
+      cprintf("allochugeuvm out of memory (2)\n");
+      deallochugeuvm(pgdir, newsz, oldsz);
+      kfree(mem);
+      return 0;
+    }
+  }
+  return newsz;
+}
+
+
 // Deallocate user pages to bring the process size from oldsz to
 // newsz.  oldsz and newsz need not be page-aligned, nor does newsz
 // need to be less than oldsz.  oldsz can be larger than the actual
@@ -270,6 +304,35 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       pa = PTE_ADDR(*pte);
       if(pa == 0)
         panic("kfree");
+      char *v = P2V(pa);
+      kfree(v);
+      *pte = 0;
+    }
+  }
+  return newsz;
+}
+
+// TODO: implement this
+// part 2
+// I havent touched this, only copy paste
+int
+deallochugeuvm(pde_t *pgdir, uint oldsz, uint newsz)
+{
+  pte_t *pte;
+  uint a, pa;
+
+  if(newsz >= oldsz)
+    return oldsz;
+
+  a = HUGEPGROUNDUP(newsz);
+  for(; a  < oldsz; a += HUGE_PAGE_SIZE){
+    pte = walkpgdir(pgdir, (char*)a, 0);
+    if(!pte)
+      a = PGADDR(PDX(a) + 1, 0, 0) - HUGE_PAGE_SIZE;
+    else if((*pte & PTE_P) != 0){
+      pa = PTE_ADDR(*pte);
+      if(pa == 0)
+        panic("khugefree");
       char *v = P2V(pa);
       kfree(v);
       *pte = 0;
