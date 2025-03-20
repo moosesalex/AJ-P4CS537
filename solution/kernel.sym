@@ -61,8 +61,8 @@
 80106c00 deallochugeuvm.part.0
 80106cb0 mappages
 8010b420 kmap
-8010773a uva2ka.cold
-80107741 copyout.cold
+8010774a uva2ka.cold
+80107751 copyout.cold
 80100280 consoleread
 80106a9f vector242
 801064f6 vector119
@@ -146,9 +146,9 @@
 80104f20 sys_read
 80106973 vector217
 80104ac0 fetchint
-80107400 setupkvm
+80107410 setupkvm
 80104990 memcpy
-80107380 freevm
+80107390 freevm
 801060de vector1
 8010679f vector178
 8010621d vector38
@@ -170,7 +170,7 @@
 80100e10 fileinit
 80104600 initlock
 80106547 vector128
-80107670 copyout
+80107680 copyout
 801063a0 vector81
 80104270 sleep
 80102ae0 microdelay
@@ -202,7 +202,7 @@
 8010652c vector125
 801070c0 allocuvm
 80105c00 trapret
-80107350 deallochugeuvm
+80107360 deallochugeuvm
 80106967 vector216
 801062fe vector63
 801061b1 vector26
@@ -231,7 +231,7 @@
 801069f7 vector228
 80106241 vector42
 801064c9 vector114
-80107620 uva2ka
+80107630 uva2ka
 8010677b vector175
 801065fb vector143
 80100e30 filealloc
@@ -243,7 +243,7 @@
 801065ef vector142
 8010644b vector100
 801068b3 vector201
-801074a0 clearpteu
+801074b0 clearpteu
 80103b20 myproc
 80105c10 tvinit
 801062e3 vector60
@@ -304,7 +304,7 @@
 80100ef0 fileclose
 80102f10 begin_op
 80106667 vector152
-80107480 kvmalloc
+80107490 kvmalloc
 80106a0f vector230
 80102830 khugealloc
 801049a0 strncmp
@@ -315,7 +315,7 @@
 80103780 pipewrite
 801049f0 strncpy
 80106346 vector71
-801074f0 copyuvm
+80107500 copyuvm
 8010ff60 ftable
 801066c7 vector160
 80104ba0 argptr
@@ -392,7 +392,7 @@
 80114dc0 idt
 8010697f vector218
 80103a80 pinit
-80107320 deallocuvm
+80107330 deallocuvm
 801069d3 vector225
 80102aa0 lapicid
 8010680b vector187
