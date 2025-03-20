@@ -182,7 +182,7 @@ int growhugeproc(int n)
   uint sz;
   struct proc *curproc = myproc();
 
-  sz = curproc->sz;
+  sz = curproc->hugesz;
   if(n > 0){
     if((sz = allochugeuvm(curproc->pgdir, sz, sz + n)) == 0)
       return -1;
@@ -190,7 +190,7 @@ int growhugeproc(int n)
     if((sz = deallochugeuvm(curproc->pgdir, sz, sz + n)) == 0)
       return -1;
   }
-  curproc->sz = sz;
+  curproc->hugesz = sz;
   switchuvm(curproc);
   return 0;
 }

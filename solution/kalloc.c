@@ -63,8 +63,7 @@ void freerange(void *vstart, void *vend)
     kfree(p);
 }
 
-// TODO: i think this is implemented properly
-// part 1
+// part 1 lgtm
 // a helper function acting similar to freerange(),
 // but uses HUGE_PAGE_SIZE sizes instead of regular PGSIZE
 void freehugerange(void *vstart, void *vend)
