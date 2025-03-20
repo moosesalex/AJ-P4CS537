@@ -271,7 +271,7 @@ allochugeuvm(pde_t *pgdir, uint oldsz, uint newsz)
       return 0;
     }
     memset(mem, 0, HUGE_PAGE_SIZE);
-    if(mappages(pgdir, (char*)a, HUGE_PAGE_SIZE, V2P(mem), PTE_W|PTE_U) < 0){
+    if(mappages(pgdir, (char*)a, HUGE_PAGE_SIZE, V2P(mem), PTE_PS|PTE_W|PTE_U) < 0){
       cprintf("allochugeuvm out of memory (2)\n");
       deallochugeuvm(pgdir, newsz, oldsz);
       kfree(mem);
