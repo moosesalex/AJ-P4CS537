@@ -185,13 +185,13 @@ int growhugeproc(int n)
 
   sz = curproc->hugesz;
   if(n > 0){
-    if((sz = allochugeuvm(curproc->pgdir, sz, sz + n)) == 0)
+    if((sz = allochugeuvm(curproc->pgdir, sz + HUGE_VA_OFFSET, sz + n + HUGE_VA_OFFSET)) == 0)
       return -1;
   } else if(n < 0){
     if((sz = deallochugeuvm(curproc->pgdir, sz, sz + n)) == 0)
       return -1;
   }
-  curproc->hugesz = sz;
+  curproc->hugesz = sz - HUGE_VA_OFFSET;
   switchuvm(curproc);
   return 0;
 }

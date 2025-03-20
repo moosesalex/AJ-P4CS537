@@ -67,8 +67,8 @@ sys_shugebrk(void)
 
   if(argint(0, &n) < 0)
     return -1;
-  addr = myproc()->hugesz;
-  if(growhugeproc(n + HUGE_VA_OFFSET) < 0)
+  addr = myproc()->hugesz + HUGE_VA_OFFSET;
+  if(growhugeproc(n) < 0)
     return -1;
   return addr;
 }

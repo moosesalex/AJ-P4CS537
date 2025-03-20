@@ -60,9 +60,32 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 static int
 mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 {
+  // check physical address in range
+  // to do hugepage version
+  // if physical address in hugepage range
   char *a, *last;
   pte_t *pte;
+  pde_t *pde; //
 
+  // if physical address is in huge range,
+  if (pa >= HUGE_PAGE_START && pa <= HUGE_PAGE_END)
+  {
+    // huge code
+    a = (char*)HUGEPGROUNDDOWN((uint)va);
+    last = (char*)HUGEPGROUNDDOWN(((uint)va) + size - 1);
+    for(;;)
+    {
+      pde = &pgdir[PDX(va)];
+      // mapping to a huge page
+      *pde = pa | perm | PTE_P | PTE_PS;
+      if(a == last)
+        break;
+      a += HUGE_PAGE_SIZE;
+      pa += HUGE_PAGE_SIZE;
+    }
+  }
+
+  // else do regular pages
   a = (char*)PGROUNDDOWN((uint)va);
   last = (char*)PGROUNDDOWN(((uint)va) + size - 1);
   for(;;){
