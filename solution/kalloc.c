@@ -8,6 +8,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "spinlock.h"
+#include "proc.h"
 
 void freerange(void *vstart, void *vend);
 void freehugerange(void *vstart, void *vend);
@@ -52,6 +53,7 @@ void kinit2(void *vstart, void *vend)
 // do we want to hardcode the vstart vend? check that theyre in the right range?
 void khugeinit(void *vstart, void *vend)
 {
+
   freehugerange(vstart, vend);
 }
 
@@ -145,7 +147,9 @@ char *
 khugealloc(void)
 {
   struct run *r;
-
+  
+  //r = (struct run *)HUGE_VA_OFFSET;
+  
   if (kmem.use_lock)
     acquire(&kmem.lock);
   r = kmem.freehugelist;

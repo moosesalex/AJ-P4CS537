@@ -179,6 +179,7 @@ growproc(int n)
 // TODO: add allochugeuvm, deallochugeuvm
 int growhugeproc(int n)
 {
+//  n += HUGE_VA_OFFSET; // random ass shit
   uint sz;
   struct proc *curproc = myproc();
 
