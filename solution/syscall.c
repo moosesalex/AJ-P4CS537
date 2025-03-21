@@ -106,6 +106,8 @@ extern int sys_uptime(void);
 extern int sys_printhugepde(void);
 extern int sys_procpgdirinfo(void);
 extern int sys_shugebrk(void); // part 2
+extern int sys_setthp(void);
+extern int sys_getthp(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -132,6 +134,8 @@ static int (*syscalls[])(void) = {
 [SYS_printhugepde]    sys_printhugepde,
 [SYS_procpgdirinfo]    sys_procpgdirinfo,
 [SYS_shugebrk] sys_shugebrk, // part 2
+[SYS_setthp] sys_setthp, //part 3
+[SYS_getthp] sys_getthp,
 };
 
 void

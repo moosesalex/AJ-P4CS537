@@ -23,3 +23,5 @@
 #define SYS_printhugepde 22
 #define SYS_procpgdirinfo 23
 #define SYS_shugebrk 24
+#define SYS_setthp 25
+#define SYS_getthp 26

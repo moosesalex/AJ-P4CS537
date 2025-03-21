@@ -30,6 +30,8 @@ int sleep(int);
 int uptime(void);
 int printhugepde(void);
 int procpgdirinfo(int*);
+int setthp(int);
+int getthp(void);
 
 // ulib.c
 int stat(const char*, struct stat*);
@@ -44,4 +46,5 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void* vmalloc(uint, uint);
 void free(void*);
+void vfree(void*);
 int atoi(const char*);

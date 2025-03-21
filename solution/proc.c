@@ -182,7 +182,6 @@ int growhugeproc(int n)
 //  n += HUGE_VA_OFFSET; // random ass shit
   uint sz;
   struct proc *curproc = myproc();
-
   sz = curproc->hugesz;
   if(n > 0){
     if((sz = allochugeuvm(curproc->pgdir, sz + HUGE_VA_OFFSET, sz + n + HUGE_VA_OFFSET)) == 0)

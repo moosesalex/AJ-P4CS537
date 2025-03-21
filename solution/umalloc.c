@@ -30,34 +30,38 @@ static Header *hugefreep;
 void
 free(void *ap)
 {
-  Header *bp, *p;
-
-  bp = (Header*)ap - 1;
-  for(p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
-    if(p >= p->s.ptr && (bp > p || bp < p->s.ptr))
-      break;
-  if(bp + bp->s.size == p->s.ptr){
-    bp->s.size += p->s.ptr->s.size;
-    bp->s.ptr = p->s.ptr->s.ptr;
-  } else
-    bp->s.ptr = p->s.ptr;
-  if(p + p->s.size == bp){
-    p->s.size += bp->s.size;
-    p->s.ptr = bp->s.ptr;
-  } else
-    p->s.ptr = bp;
-  freep = p;
+ vfree(ap);
 }
 
 // TODO: implement this
 // part 2
 void
-vfree(void *ap, uint flag)
+vfree(void *ap)
 {
+  int flag = VMALLOC_SIZE_BASE;
+  if (((uint) ap) >= ((uint) HUGE_PAGE_START)) {
+    flag = 1;
+  }
   if(flag == VMALLOC_SIZE_BASE)
   {
     // free regular pages
-    free(ap);
+    Header *bp, *p;
+    bp = (Header*)ap - 1;
+    for(p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr){
+      if(p >= p->s.ptr && (bp > p || bp < p->s.ptr))
+        break;
+    }
+    if(bp + bp->s.size == p->s.ptr){
+      bp->s.size += p->s.ptr->s.size;
+      bp->s.ptr = p->s.ptr->s.ptr;
+    } else
+      bp->s.ptr = p->s.ptr;
+    if(p + p->s.size == bp){
+      p->s.size += bp->s.size;
+      p->s.ptr = bp->s.ptr;
+    } else
+      p->s.ptr = bp;
+    freep = p;
   }
   else
   {
@@ -95,7 +99,7 @@ morecore(uint nu)
     return 0;
   hp = (Header*)p;
   hp->s.size = nu;
-  free((void*)(hp + 1));
+  vfree((void*)(hp + 1));
   return freep;
 }
 
@@ -118,13 +122,17 @@ morehugecore(uint nu)
     return 0;
   hp = (Header*)p;
   hp->s.size = nu;
-  free((void*)(hp + 1));
+  vfree((void*)(hp + 1));
   return hugefreep;
 }
 
 void*
 malloc(uint nbytes)
 {
+  if(nbytes > 1000000 && (getthp() != 0)){
+    vmalloc(nbytes, VMALLOC_SIZE_HUGE);
+    return 0;
+  }
   Header *p, *prevp;
   uint nunits;
 

@@ -66,7 +66,6 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
   char *a, *last;
   pte_t *pte;
   pde_t *pde; //
-
   // if physical address is in huge range,
   if (pa >= HUGE_PAGE_START && pa < HUGE_PAGE_END)
   {
@@ -283,7 +282,6 @@ allochugeuvm(pde_t *pgdir, uint oldsz, uint newsz)
   char *mem;
   uint a;
 
-  
   if(newsz < oldsz)
     return oldsz;
 
@@ -296,7 +294,7 @@ allochugeuvm(pde_t *pgdir, uint oldsz, uint newsz)
       return 0;
     }
     memset(mem, 0, HUGE_PAGE_SIZE);
-    if(mappages(pgdir, (char*)a + HUGE_VA_OFFSET, HUGE_PAGE_SIZE, V2P(mem), PTE_PS|PTE_W|PTE_U) < 0){
+    if(mappages(pgdir, (char*)a, HUGE_PAGE_SIZE, V2P(mem), PTE_PS|PTE_W|PTE_U) < 0){
       cprintf("allochugeuvm out of memory (2)\n");
       deallocuvm(pgdir, newsz, oldsz);
       kfree(mem);
@@ -322,11 +320,16 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
   pde = &pgdir[PDX(a)] // gives pde
   pde & PTE_PS
   */
-
   if(newsz >= oldsz)
     return oldsz;
-
-  a = PGROUNDUP(newsz);
+  
+  pde = &pgdir[PDX(newsz)];
+  if (*pde & PTE_PS){
+    a = HUGEPGROUNDUP(newsz);
+  }
+  else{
+    a = PGROUNDUP(newsz);
+  }
   for(; a  < oldsz; )
   {
     // check if a points to hugepage
@@ -334,7 +337,6 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
     if (*pde & PTE_PS)
     {
       // is a hugepage
-      a = HUGEPGROUNDUP(newsz);
       pte = walkpgdir(pgdir, (char*)a, 0);
       if(!pte)
         a = PGADDR(PDX(a) + 1, 0, 0) - HUGE_PAGE_SIZE;
@@ -411,6 +413,7 @@ freevm(pde_t *pgdir)
   deallocuvm(pgdir, KERNBASE, 0);
 
   for(i = 0; i < NPDENTRIES; i++){
+    
     if(pgdir[i] & PTE_P){
       //check if huge page
       if (pgdir[i] & PTE_PS)

@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
+int GLOBAL_THP;
 
 int
 sys_fork(void)
@@ -64,13 +65,24 @@ sys_shugebrk(void)
 {
   int addr;
   int n;
-
+  
   if(argint(0, &n) < 0)
     return -1;
   addr = myproc()->hugesz + HUGE_VA_OFFSET;
   if(growhugeproc(n) < 0)
     return -1;
   return addr;
+}
+
+int sys_setthp(void){
+  int input;
+  argint(0, &input);
+  GLOBAL_THP = input;
+  return input;
+}
+
+int sys_getthp(void){
+  return GLOBAL_THP;
 }
 
 int
