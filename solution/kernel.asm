@@ -13744,7 +13744,7 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 80106d20:	89 c6                	mov    %eax,%esi
 80106d22:	89 c8                	mov    %ecx,%eax
 80106d24:	89 d7                	mov    %edx,%edi
-    // check if a is hugepage
+    // check if a points to hugepage
     pde = &pgdir[PDX(a)];
     if (*pde & PTE_PS)
     {
@@ -14651,7 +14651,7 @@ freevm(pde_t *pgdir)
 
   if(pgdir == 0)
 801074fc:	85 f6                	test   %esi,%esi
-801074fe:	74 59                	je     80107559 <freevm+0x69>
+801074fe:	74 5d                	je     8010755d <freevm+0x6d>
   if(newsz >= oldsz)
 80107500:	31 c9                	xor    %ecx,%ecx
 80107502:	ba 00 00 00 80       	mov    $0x80000000,%edx
@@ -14660,51 +14660,60 @@ freevm(pde_t *pgdir)
 8010750b:	e8 f0 f7 ff ff       	call   80106d00 <deallocuvm.part.0>
     panic("freevm: no pgdir");
   deallocuvm(pgdir, KERNBASE, 0);
+
   for(i = 0; i < NPDENTRIES; i++){
 80107510:	8d be 00 10 00 00    	lea    0x1000(%esi),%edi
 80107516:	eb 0f                	jmp    80107527 <freevm+0x37>
 80107518:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
 8010751f:	90                   	nop
 80107520:	83 c3 04             	add    $0x4,%ebx
-80107523:	39 df                	cmp    %ebx,%edi
-80107525:	74 23                	je     8010754a <freevm+0x5a>
+80107523:	39 fb                	cmp    %edi,%ebx
+80107525:	74 27                	je     8010754e <freevm+0x5e>
     if(pgdir[i] & PTE_P){
 80107527:	8b 03                	mov    (%ebx),%eax
 80107529:	a8 01                	test   $0x1,%al
 8010752b:	74 f3                	je     80107520 <freevm+0x30>
-      char * v = P2V(PTE_ADDR(pgdir[i]));
-8010752d:	25 00 f0 ff ff       	and    $0xfffff000,%eax
-      kfree(v);
-80107532:	83 ec 0c             	sub    $0xc,%esp
+      //check if huge page
+      if (pgdir[i] & PTE_PS)
+8010752d:	a8 80                	test   $0x80,%al
+8010752f:	75 ef                	jne    80107520 <freevm+0x30>
+      {
+      }
+      else
+      {
+        char * v = P2V(PTE_ADDR(pgdir[i]));
+80107531:	25 00 f0 ff ff       	and    $0xfffff000,%eax
+        kfree(v);
+80107536:	83 ec 0c             	sub    $0xc,%esp
   for(i = 0; i < NPDENTRIES; i++){
-80107535:	83 c3 04             	add    $0x4,%ebx
-      char * v = P2V(PTE_ADDR(pgdir[i]));
-80107538:	05 00 00 00 80       	add    $0x80000000,%eax
-      kfree(v);
-8010753d:	50                   	push   %eax
-8010753e:	e8 8d af ff ff       	call   801024d0 <kfree>
-80107543:	83 c4 10             	add    $0x10,%esp
+80107539:	83 c3 04             	add    $0x4,%ebx
+        char * v = P2V(PTE_ADDR(pgdir[i]));
+8010753c:	05 00 00 00 80       	add    $0x80000000,%eax
+        kfree(v);
+80107541:	50                   	push   %eax
+80107542:	e8 89 af ff ff       	call   801024d0 <kfree>
+80107547:	83 c4 10             	add    $0x10,%esp
   for(i = 0; i < NPDENTRIES; i++){
-80107546:	39 df                	cmp    %ebx,%edi
-80107548:	75 dd                	jne    80107527 <freevm+0x37>
+8010754a:	39 fb                	cmp    %edi,%ebx
+8010754c:	75 d9                	jne    80107527 <freevm+0x37>
+      }
     }
   }
   kfree((char*)pgdir);
-8010754a:	89 75 08             	mov    %esi,0x8(%ebp)
+8010754e:	89 75 08             	mov    %esi,0x8(%ebp)
 }
-8010754d:	8d 65 f4             	lea    -0xc(%ebp),%esp
-80107550:	5b                   	pop    %ebx
-80107551:	5e                   	pop    %esi
-80107552:	5f                   	pop    %edi
-80107553:	5d                   	pop    %ebp
+80107551:	8d 65 f4             	lea    -0xc(%ebp),%esp
+80107554:	5b                   	pop    %ebx
+80107555:	5e                   	pop    %esi
+80107556:	5f                   	pop    %edi
+80107557:	5d                   	pop    %ebp
   kfree((char*)pgdir);
-80107554:	e9 77 af ff ff       	jmp    801024d0 <kfree>
+80107558:	e9 73 af ff ff       	jmp    801024d0 <kfree>
     panic("freevm: no pgdir");
-80107559:	83 ec 0c             	sub    $0xc,%esp
-8010755c:	68 79 82 10 80       	push   $0x80108279
-80107561:	e8 1a 8e ff ff       	call   80100380 <panic>
-80107566:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
-8010756d:	8d 76 00             	lea    0x0(%esi),%esi
+8010755d:	83 ec 0c             	sub    $0xc,%esp
+80107560:	68 79 82 10 80       	push   $0x80108279
+80107565:	e8 16 8e ff ff       	call   80100380 <panic>
+8010756a:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
 
 80107570 <setupkvm>:
 {

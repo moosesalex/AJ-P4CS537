@@ -14,6 +14,7 @@ changed files:
         updated kmap to include hugespace
         added allochugeuvm() to allocate huge pages
         updated deallocuvm() to dealloc base pages or huge pages based on checking PTE_PS bit
+        updated freevm to do nothing if called on a hugepage
     usys.S, syscall.c
         added syscall shugebrk to system call tables and other
     user.h

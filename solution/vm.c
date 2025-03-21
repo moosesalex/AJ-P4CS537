@@ -409,10 +409,20 @@ freevm(pde_t *pgdir)
   if(pgdir == 0)
     panic("freevm: no pgdir");
   deallocuvm(pgdir, KERNBASE, 0);
+
   for(i = 0; i < NPDENTRIES; i++){
     if(pgdir[i] & PTE_P){
-      char * v = P2V(PTE_ADDR(pgdir[i]));
-      kfree(v);
+      //check if huge page
+      if (pgdir[i] & PTE_PS)
+      {
+        // if hugepage do nothing
+      }
+      else
+      {
+        // otherwise free the page
+        char * v = P2V(PTE_ADDR(pgdir[i]));
+        kfree(v);
+      }
     }
   }
   kfree((char*)pgdir);
