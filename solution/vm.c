@@ -68,14 +68,14 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
   pde_t *pde; //
 
   // if physical address is in huge range,
-  if (pa >= HUGE_PAGE_START && pa <= HUGE_PAGE_END)
+  if (pa >= HUGE_PAGE_START && pa < HUGE_PAGE_END)
   {
     // huge code
     a = (char*)HUGEPGROUNDDOWN((uint)va);
     last = (char*)HUGEPGROUNDDOWN(((uint)va) + size - 1);
     for(;;)
     {
-      pde = &pgdir[PDX(va)];
+      pde = &pgdir[PDX(a)];
       // mapping to a huge page
       *pde = pa | perm | PTE_P | PTE_PS;
       if(a == last)
@@ -292,13 +292,13 @@ allochugeuvm(pde_t *pgdir, uint oldsz, uint newsz)
     mem = khugealloc();
     if(mem == 0){
       cprintf("allochugeuvm out of memory\n");
-      deallochugeuvm(pgdir, newsz, oldsz);
+      deallocuvm(pgdir, newsz, oldsz);
       return 0;
     }
     memset(mem, 0, HUGE_PAGE_SIZE);
     if(mappages(pgdir, (char*)a + HUGE_VA_OFFSET, HUGE_PAGE_SIZE, V2P(mem), PTE_PS|PTE_W|PTE_U) < 0){
       cprintf("allochugeuvm out of memory (2)\n");
-      deallochugeuvm(pgdir, newsz, oldsz);
+      deallocuvm(pgdir, newsz, oldsz);
       kfree(mem);
       return 0;
     }
@@ -314,25 +314,58 @@ allochugeuvm(pde_t *pgdir, uint oldsz, uint newsz)
 int
 deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 {
+  //PTE_PS stores is hugepage
   pte_t *pte;
   uint a, pa;
+  pde_t *pde;
+  /*
+  pde = &pgdir[PDX(a)] // gives pde
+  pde & PTE_PS
+  */
 
   if(newsz >= oldsz)
     return oldsz;
 
   a = PGROUNDUP(newsz);
-  for(; a  < oldsz; a += PGSIZE){
-    pte = walkpgdir(pgdir, (char*)a, 0);
-    if(!pte)
-      a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
-    else if((*pte & PTE_P) != 0){
-      pa = PTE_ADDR(*pte);
-      if(pa == 0)
-        panic("kfree");
-      char *v = P2V(pa);
-      kfree(v);
-      *pte = 0;
+  for(; a  < oldsz; )
+  {
+    // check if a points to hugepage
+    pde = &pgdir[PDX(a)];
+    if (*pde & PTE_PS)
+    {
+      // is a hugepage
+      a = HUGEPGROUNDUP(newsz);
+      pte = walkpgdir(pgdir, (char*)a, 0);
+      if(!pte)
+        a = PGADDR(PDX(a) + 1, 0, 0) - HUGE_PAGE_SIZE;
+      else if((*pte & PTE_P) != 0)
+      {
+        pa = PTE_ADDR(*pte);
+        if(pa == 0)
+          panic("khugefree");
+        char *v = P2V(pa);
+        khugefree(v);
+        *pte = 0;
+      }
+      a += HUGE_PAGE_SIZE; //if freed a hugepage
     }
+    else
+    {
+      // is not a hugepage
+      pte = walkpgdir(pgdir, (char*)a, 0);
+      if(!pte)
+        a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
+      else if((*pte & PTE_P) != 0){
+        pa = PTE_ADDR(*pte);
+        if(pa == 0)
+          panic("kfree");
+        char *v = P2V(pa);
+        kfree(v);
+        *pte = 0;
+      }
+      a += PGSIZE; // if freed a basepage
+    }
+
   }
   return newsz;
 }

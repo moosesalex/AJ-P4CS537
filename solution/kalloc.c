@@ -26,8 +26,16 @@ struct
   struct spinlock lock;
   int use_lock;
   struct run *freelist;
-  struct run *freehugelist; // this might be better under a different lock? maybe not...
+  //struct run *freehugelist; // this might be better under a different lock? maybe not...
 } kmem;
+
+struct
+{
+  struct spinlock lock;
+  int use_lock;
+  struct run *freehugelist;
+} khugemem;
+
 
 // Initialization happens in two phases.
 // 1. main() calls kinit1() while still using entrypgdir to place just
@@ -53,11 +61,10 @@ void kinit2(void *vstart, void *vend)
 // do we want to hardcode the vstart vend? check that theyre in the right range?
 void khugeinit(void *vstart, void *vend)
 {
-  if (kmem.use_lock)
-    acquire(&kmem.lock);
+  initlock(&khugemem.lock, "khugemem");
+  khugemem.use_lock=0;
   freehugerange(vstart, vend);
-  if (kmem.use_lock)
-    release(&kmem.lock);
+  khugemem.use_lock=1;
 }
 
 void freerange(void *vstart, void *vend)
@@ -117,13 +124,13 @@ void khugefree(char *v)
   // Fill with junk to catch dangling refs.
   memset(v, 1, HUGE_PAGE_SIZE);
 
-  if (kmem.use_lock)
-    acquire(&kmem.lock);
+  if (khugemem.use_lock)
+    acquire(&khugemem.lock);
   r = (struct run *)v;
-  r->next = kmem.freehugelist;
-  kmem.freehugelist = r;
-  if (kmem.use_lock)
-    release(&kmem.lock);
+  r->next = khugemem.freehugelist;
+  khugemem.freehugelist = r;
+  if (khugemem.use_lock)
+    release(&khugemem.lock);
 }
 
 // Allocate one 4096-byte page of physical memory.
@@ -153,13 +160,13 @@ khugealloc(void)
   
   //r = (struct run *)HUGE_VA_OFFSET;
   
-  if (kmem.use_lock)
-    acquire(&kmem.lock);
-  r = kmem.freehugelist;
+  if (khugemem.use_lock)
+    acquire(&khugemem.lock);
+  r = khugemem.freehugelist;
   if (r)
-    kmem.freehugelist = r->next;
-  if (kmem.use_lock)
-    release(&kmem.lock);
+    khugemem.freehugelist = r->next;
+  if (khugemem.use_lock)
+    release(&khugemem.lock);
 
   return (char *)r;
 }
