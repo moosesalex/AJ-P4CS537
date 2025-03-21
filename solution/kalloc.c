@@ -53,8 +53,11 @@ void kinit2(void *vstart, void *vend)
 // do we want to hardcode the vstart vend? check that theyre in the right range?
 void khugeinit(void *vstart, void *vend)
 {
-
+  if (kmem.use_lock)
+    acquire(&kmem.lock);
   freehugerange(vstart, vend);
+  if (kmem.use_lock)
+    release(&kmem.lock);
 }
 
 void freerange(void *vstart, void *vend)
