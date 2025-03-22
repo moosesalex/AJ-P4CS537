@@ -407,11 +407,9 @@ void
 freevm(pde_t *pgdir)
 {
   uint i;
-
   if(pgdir == 0)
     panic("freevm: no pgdir");
   deallocuvm(pgdir, KERNBASE, 0);
-
   for(i = 0; i < NPDENTRIES; i++){
     
     if(pgdir[i] & PTE_P){
@@ -419,6 +417,8 @@ freevm(pde_t *pgdir)
       if (pgdir[i] & PTE_PS)
       {
         // if hugepage do nothing
+        //char* v = P2V(PTE_ADDR(pgdir[i]));
+        //khugefree(v);
       }
       else
       {
@@ -447,9 +447,10 @@ clearpteu(pde_t *pgdir, char *uva)
 // Given a parent process's page table, create a copy
 // of it for a child.
 pde_t*
-copyuvm(pde_t *pgdir, uint sz)
+copyuvm(pde_t *pgdir, uint sz, uint hugesz)
 {
   pde_t *d;
+  pde_t *pde;
   pte_t *pte;
   uint pa, i, flags;
   char *mem;
@@ -468,6 +469,19 @@ copyuvm(pde_t *pgdir, uint sz)
     memmove(mem, (char*)P2V(pa), PGSIZE);
     if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0) {
       kfree(mem);
+      goto bad;
+    }
+  }
+  for(i = HUGE_VA_OFFSET; i < HUGE_VA_OFFSET + hugesz; i += HUGE_PAGE_SIZE){
+
+    pde = &pgdir[PDX(i)];
+    pa = PTE_ADDR(*pde);
+    flags = PTE_FLAGS(*pde);
+    if((mem = khugealloc()) == 0)
+      goto bad;
+    memmove(mem, (char*)P2V(pa), HUGE_PAGE_SIZE);
+    if(mappages(d, (void*)i, HUGE_PAGE_SIZE, V2P(mem), flags) < 0) {
+      khugefree(mem);
       goto bad;
     }
   }

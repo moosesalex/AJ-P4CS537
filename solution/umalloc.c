@@ -130,8 +130,8 @@ void*
 malloc(uint nbytes)
 {
   if(nbytes > 1000000 && (getthp() != 0)){
-    vmalloc(nbytes, VMALLOC_SIZE_HUGE);
-    return 0;
+    printf(1, "Triggered thp\n");
+    return vmalloc(nbytes, VMALLOC_SIZE_HUGE);
   }
   Header *p, *prevp;
   uint nunits;

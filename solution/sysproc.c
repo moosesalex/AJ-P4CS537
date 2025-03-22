@@ -76,9 +76,11 @@ sys_shugebrk(void)
 
 int sys_setthp(void){
   int input;
-  argint(0, &input);
+  if(argint(0, &input) == -1){
+    return -1;
+  }
   GLOBAL_THP = input;
-  return input;
+  return 0;
 }
 
 int sys_getthp(void){
